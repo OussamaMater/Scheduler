@@ -1,0 +1,38 @@
+{
+    "cSpell.words": [
+        "aandek",
+        "affichi",
+        "akther",
+        "AKTHER",
+        "dima",
+        "fama",
+        "FICHIER",
+        "haja",
+        "haka",
+        "hsebo",
+        "kifeh",
+        "maanha",
+        "naamleha",
+        "nadhef",
+        "NOMBRE",
+        "nrodha",
+        "nshouf",
+        "ralo",
+        "shih",
+        "shiha",
+        "trodo",
+        "updati",
+        "yabda",
+        "yatyk",
+        "yekhdem"
+    ],
+    "files.associations": {
+        "typeinfo": "c",
+        "helpers.h": "c",
+        "process.h": "c",
+        "fifo.h": "c",
+        "rr.h": "c",
+        "sjf.h": "c",
+        "srt.h": "c"
+    }
+}
