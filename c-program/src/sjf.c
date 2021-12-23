@@ -21,7 +21,7 @@ process *sortProcessesByCT(process *tab, int size)
     return tab;
 }
 
-int sjf(process *tab, int processesNumber, int mode)
+void sjf(process *tab, int processesNumber, int mode)
 {
     data dataTab[processesNumber];
     int processedInTotal, outputIndex, dataIndex, tookTour, ganttTimeIndex = 0;
@@ -43,7 +43,7 @@ int sjf(process *tab, int processesNumber, int mode)
     ganttTime[ganttTimeIndex] = dataTab[0].finished;
     ganttTimeIndex++;
 
-    tab = sortProcessesByCT(tab, processesNumber); // now we should work
+    tab = sortProcessesByCT(tab, processesNumber);
 
     while (processedInTotal < processesNumber)
     {
@@ -91,17 +91,7 @@ int sjf(process *tab, int processesNumber, int mode)
     }
     else
     {
+        printf("Scheduling Algorithm: \033[0;35mShortest Job First\033[0m\n\n");
         displayForCLI(outputIndex, output, processesNumber, dataTab, ganttTimeIndex, ganttTime);
     }
 }
-
-// int main(int argc, char *argv[])
-// {
-//     process *tab;
-//     int *output;
-
-//     tab = fillProcesses(argv[1]);
-
-//     sjf(tab, countProcesses(argv[1]), 1);
-//     return 0;
-// }

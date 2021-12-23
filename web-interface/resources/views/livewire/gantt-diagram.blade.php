@@ -11,7 +11,7 @@
             <div class="card-body">
                 <div class="row align-content-center m-2">
                     @forelse ($processesOrder as $process)
-                        <div class="col-2 align-content-center bg-secondary border my-3 border-primary gantt words">
+                        <div class="col-2 align-content-center bg-secondary border my-3 border-primary words gantt">
                             <h3 class="text-center">{{ $process == 'P-1' ? '_' : $process }}</h3>
                             <div style="margin-bottom: -40px" class="row">
                                 <div class="col-6 text-left p-0">
@@ -102,6 +102,15 @@
                             </label>
                         </div>
                     </div>
+                    <div class="col-md-12 mb-3">
+                        <div class="form-check form-switch">
+                            <input wire:model.defer="animate" class="form-check-input" type="checkbox"
+                                id="flexSwitchCheckDefault">
+                            <label class="form-check-label" for="flexSwitchCheckDefault">
+                                Animate
+                            </label>
+                        </div>
+                    </div>
                     @if ($schedulingAlgorithm == 3)
                         <div class="col-md-12 mb-3">
                             <label for="quantum" class="form-label">Quantum</label>
@@ -117,18 +126,21 @@
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
-        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-
-    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ asset('js/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ asset('js/sweetalert2.all.min.js') }}"></script>
 
     <script>
         $(document).ready(function() {
-            console.log("ready");
             window.addEventListener('animate', event => {
-                $('.words').each(function(i) {
-                    $(this).delay(750 * (i + 1)).fadeIn(3000);
-                });
+                if (event.detail.delay == 0) {
+                    $('.words').each(function(i) {
+                        $(this).fadeIn(event.detail.fadeIn);
+                    });
+                } else {
+                    $('.words').each(function(i) {
+                        $(this).delay(event.detail.delay * (i + 1)).fadeIn(event.detail.fadeIn);
+                    });
+                }
             })
         });
 
@@ -136,7 +148,7 @@
             Swal.fire({
                 icon: 'error',
                 title: 'Oops...',
-                text: 'Quantum must be at least 1!',
+                text: event.detail.alert,
             })
         })
     </script>

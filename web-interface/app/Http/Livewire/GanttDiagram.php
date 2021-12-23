@@ -13,8 +13,10 @@ class GanttDiagram extends Component
     public $turnAroundTime      = 0;
     public $waitingTime         = 0;
     public $saveToDataBase      = false;
+    public $animate             = false;
     public $processesOrder      = [];
     public $processesInfos      = [];
+    public $errorMessage;
     public $quantum;
     public $output;
     public $axis;
@@ -22,10 +24,13 @@ class GanttDiagram extends Component
     public function process()
     {
         if ($this->schedulingAlgorithm == 3 && $this->quantum < 1) {
-            return $this->dispatchBrowserEvent('alert');
+            return $this->dispatchBrowserEvent('alert', ['alert' => 'Quantum must be at least 1!']);
         }
 
-        $this->executeC();
+        if ($this->executeC() == -1) {
+            return $this->dispatchBrowserEvent('alert', ['alert' => $this->errorMessage]);
+        };
+
         $this->getProcessesInfos();
         $this->processesOrder = $this->getProcessesOrder();
         $this->axis           = $this->getGanttTimeAxis();
@@ -41,7 +46,11 @@ class GanttDiagram extends Component
             $this->emit('updated_history');
         }
 
-        $this->dispatchBrowserEvent('animate');
+        if ($this->animate) {
+            return $this->dispatchBrowserEvent('animate', ['delay' => 750, 'fadeIn' => 3000]);
+        }
+
+        return $this->dispatchBrowserEvent('animate', ['delay' => 0, 'fadeIn' => 0]);
     }
 
     public function executeC()
@@ -56,6 +65,12 @@ class GanttDiagram extends Component
 
         $command = env('BINARY') . ' ' .  env('KEY') . ' ' . env('CONFIG_FILE_PATH') . ' ' .  $algo . ' ' . $this->quantum ?? '' . ' 2>&1';
         exec($command . '', $output);
+        // Checking if there's an error, and since I only pass one single phrase, if the output equals to 1 then it sure is an error
+        if (count($output) == 1) {
+            $this->errorMessage = $output[0];
+            return -1;
+        }
+
         return $this->output = $output;
     }
 

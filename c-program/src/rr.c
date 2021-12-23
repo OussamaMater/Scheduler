@@ -3,8 +3,6 @@
 #include "../utils/process.h"
 #include "../utils/helpers.h"
 
-// TODO: LECTURE MN FICHIER TA9RA AKTHER MN NOMBRE
-
 data *initDataTable(data *dataTab, int processesNumber)
 {
     for (int i = 0; i < processesNumber; i++)
@@ -15,7 +13,7 @@ data *initDataTable(data *dataTab, int processesNumber)
     return dataTab;
 }
 
-int roundrobin(process *tab, int processesNumber, int quantum, int mode)
+void roundrobin(process *tab, int processesNumber, int quantum, int mode)
 {
     int currentTime, processedInTotal, processedInTour, outputIndex, dataIndex, ganttTimeIndex;
     int output[100];
@@ -23,21 +21,16 @@ int roundrobin(process *tab, int processesNumber, int quantum, int mode)
     int tookTour;
     data dataTab[processesNumber];
 
-    currentTime = quantum;
+    //currentTime = quantum;
     outputIndex = dataIndex = processedInTotal = 0;
     ganttTimeIndex = 1;
-
-    if (validateProcesses(tab, processesNumber) != 0)
-    {
-        printf("Validate config file");
-        return -1;
-    }
 
     // setting the burst to 0 so I can test if it was set or not
     initDataTable(dataTab, processesNumber);
 
     tab = sortProcesses(tab, processesNumber);
     processedInTour = tab[0].at;
+    currentTime = processedInTour;
     ganttTime[0] = tab[0].at;
     while (processedInTotal < processesNumber)
     {
@@ -56,7 +49,7 @@ int roundrobin(process *tab, int processesNumber, int quantum, int mode)
                     dataTab[dataIndex].id = tab[i].id;
                     dataTab[dataIndex].finished = processedInTour;
                     dataTab[dataIndex].started = tab[i].le;
-                    dataTab[dataIndex].burst = tab[i].ctc; // aaml execution manual khater manish merteh l hedhi, fi deux cas simple, ken cv khali, sinn rodha fonction wa7dha ismha setBurst()
+                    dataTab[dataIndex].burst = tab[i].ctc;
                     dataIndex++;
                     processedInTotal++;
                 }
@@ -67,7 +60,14 @@ int roundrobin(process *tab, int processesNumber, int quantum, int mode)
                     ganttTimeIndex++;
                 }
                 tab[i].at = processedInTour;
-                tab[i].ct = tab[i].ct - quantum;
+                if (tab[i].ct <= quantum)
+                {
+                    tab[i].ct = 0;
+                }
+                else
+                {
+                    tab[i].ct = tab[i].ct - quantum;
+                }
                 tookTour++;
             }
         }
@@ -92,6 +92,8 @@ int roundrobin(process *tab, int processesNumber, int quantum, int mode)
     }
     else
     {
+        system("/usr/bin/clear");
+        printf("Scheduling Algorithm: \033[0;35mRound Robin\033[0m, Quantum: \033[0;35m%d\033[0m\n\n", quantum);
         displayForCLI(outputIndex, output, dataIndex, dataTab, ganttTimeIndex, ganttTime);
     }
 }

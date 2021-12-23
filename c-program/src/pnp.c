@@ -22,7 +22,7 @@ process *sortProcessesByPriority(process *tab, int size)
     return tab;
 }
 
-int pnp(process *tab, int processesNumber, int mode)
+void pnp(process *tab, int processesNumber, int mode)
 {
     data dataTab[processesNumber];
     int processedInTotal, outputIndex, dataIndex, tookTour, ganttTimeIndex = 0;
@@ -44,7 +44,7 @@ int pnp(process *tab, int processesNumber, int mode)
     ganttTime[ganttTimeIndex] = dataTab[0].finished;
     ganttTimeIndex++;
 
-    tab = sortProcessesByPriority(tab, processesNumber); // now we should work
+    tab = sortProcessesByPriority(tab, processesNumber);
 
     while (processedInTotal < processesNumber)
     {
@@ -92,6 +92,7 @@ int pnp(process *tab, int processesNumber, int mode)
     }
     else
     {
+        printf("Scheduling Algorithm: \033[0;35mPriority - NP\033[0m\n\n");
         displayForCLI(outputIndex, output, processesNumber, dataTab, ganttTimeIndex, ganttTime);
     }
 }

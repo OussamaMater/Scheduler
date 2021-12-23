@@ -2,8 +2,6 @@
 #include "../utils/process.h"
 #include "../utils/helpers.h"
 
-// ! manish mert7elo amel few tests, jew ma baadhom, je baado barsha, jew wra badhom
-
 void fifo(process *tab, int processesNumber, int mode)
 {
     data dataTab[processesNumber];
@@ -31,7 +29,7 @@ void fifo(process *tab, int processesNumber, int mode)
     {
         for (int i = 1; i < processesNumber; i++)
         {
-            if (tab[i].at <= currentTime)
+            if (tab[i].at <= currentTime && tab[i].ct > 0)
             {
                 dataTab[i].id = tab[i].id;
                 dataTab[i].started = tab[i].at;
@@ -58,6 +56,7 @@ void fifo(process *tab, int processesNumber, int mode)
                 output[outputIndex] = -1;
                 outputIndex++;
                 currentTime++;
+                break;
             }
         }
     }
@@ -68,6 +67,7 @@ void fifo(process *tab, int processesNumber, int mode)
     }
     else
     {
+        printf("Scheduling Algorithm: \033[0;35mFirst In, First Out\033[0m\n\n");
         displayForCLI(outputIndex, output, processesNumber, dataTab, ganttTimeIndex, ganttTime);
     }
 }

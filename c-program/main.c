@@ -3,33 +3,59 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "utils/process.h"
 #include "utils/helpers.h"
-#include "src/fifo.h"
-#include "src/rr.h"
-#include "src/sjf.h"
-#include "src/srt.h"
-#include "src/pnp.h"
+#include "headers/fifo.h"
+#include "headers/rr.h"
+#include "headers/sjf.h"
+#include "headers/srt.h"
+#include "headers/pnp.h"
 
 typedef void (*Algorithm)(process *tab, int processesNumber, int mode);
+typedef void (*RR)(process *tab, int processesNumber, int quantum, int mode);
 
 typedef struct menuOptions
 {
     int id;
     char name[50];
     Algorithm algo;
+    RR rr;
 
 } menuOptions;
 
-void renderDynamicMenu()
+int executeAlgorithm(menuOptions *options, int optionsIndex, int choice)
+{
+    for (int i = 0; i < optionsIndex; i++)
+    {
+        if (options[i].id == choice)
+        {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void displayMenu(menuOptions *options, int optionsIndex)
+{
+    printf("\e[4mAvailable algorithms:\033[0m\n\n");
+    for (int i = 0; i < optionsIndex; i++)
+    {
+        printf("   %d. %s", options[i].id, options[i].name);
+    }
+
+    printf("\n\033[0;32mPlease enter an option\033[0m\n");
+}
+
+void renderDynamicMenu(process *tab, int processesNumber, int mode)
 {
     FILE *fp;
     char path[1035];
-    char menuItems[6][100];
-    int lineIndex = 0;
-    int charInLineIndex = 0;
-    menuOptions options[6]; // max algos,
-    int index = 0;
+    menuOptions options[100];
+    int optionsIndex = 0;
+    int choice;
+    int algoToExecute;
 
     fp = popen("/bin/ls ~/Desktop/Code/scheduler/c-program/bin/", "r");
     if (fp == NULL)
@@ -40,42 +66,65 @@ void renderDynamicMenu()
 
     while (fgets(path, sizeof(path), fp) != NULL)
     {
-        // well so far this is going as planed here, l fonction yaarfha w kol donc nkaml feha, w baad el Makefile naamlha hasb gcc w akhw
-        printf("%s", path);
-        options[index].id = index + 1;
-        strcpy(options[index].name, path);
-        if (strcmp(path, "fifo"))
+        if (strcmp(path, "fifo\n") == 0)
         {
-            options[index].algo = fifo;
-        }
-        printf("%d", options[index].id);
-        printf("%s", options[index].name);
-
-        return;
-
-        charInLineIndex = 0;
-        while (path[charInLineIndex] != '\n')
-        {
-            menuItems[lineIndex][charInLineIndex] = path[charInLineIndex];
-            charInLineIndex++;
+            options[optionsIndex].id = optionsIndex;
+            strcpy(options[optionsIndex].name, path);
+            options[optionsIndex].algo = fifo;
         }
 
-        menuItems[lineIndex][charInLineIndex] = '\0';
-        lineIndex++;
+        if (strcmp(path, "pnp\n") == 0)
+        {
+            options[optionsIndex].id = optionsIndex;
+            strcpy(options[optionsIndex].name, path);
+            options[optionsIndex].algo = pnp;
+        }
+
+        if (strcmp(path, "rr\n") == 0)
+        {
+            options[optionsIndex].id = optionsIndex;
+            strcpy(options[optionsIndex].name, path);
+            options[optionsIndex].rr = roundrobin;
+        }
+
+        if (strcmp(path, "sjf\n") == 0)
+        {
+            options[optionsIndex].id = optionsIndex;
+            strcpy(options[optionsIndex].name, path);
+            options[optionsIndex].algo = sjf;
+        }
+
+        if (strcmp(path, "srt\n") == 0)
+        {
+            options[optionsIndex].id = optionsIndex;
+            strcpy(options[optionsIndex].name, path);
+            options[optionsIndex].algo = shortestRemainingTime;
+        }
+
+        optionsIndex++;
     }
+
     pclose(fp);
 
-    char ch;
-    for (int lineIndex = 0; lineIndex < 6; lineIndex++)
+    displayMenu(options, optionsIndex);
+
+    do
     {
-        charInLineIndex = 0;
-        do
+        printf("=> ");
+        scanf("%d", &choice);
+    } while (choice < 0 || choice > optionsIndex - 1);
+
+    if ((algoToExecute = executeAlgorithm(options, optionsIndex, choice)) != -1)
+    {
+        system("/usr/bin/clear");
+        if (strcmp(options[algoToExecute].name, "rr\n") == 0)
         {
-            ch = menuItems[lineIndex][charInLineIndex];
-            printf("%c", ch);
-            charInLineIndex++;
-        } while (ch != '\0');
-        printf("\n");
+            options[algoToExecute].rr(tab, processesNumber, readQuantum(), mode);
+        }
+        else
+        {
+            options[algoToExecute].algo(tab, processesNumber, mode);
+        }
     }
 }
 
@@ -89,13 +138,28 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // Checking wether the binary was executed manually or via the web app
+    // ? Checking wether the binary was executed manually or via the web app
 
     if (strcmp(argv[1], KEY) == 0)
     {
-        // Being called from the app so I need to display the App version
-        // ./scheduler KEY config fifo (quantum)
+        // * Being called from the app so I need to display the App version
+        // * ./scheduler KEY config fifo (quantum)
+
+        // ! counting the processes number first in case anything goes wrong, for the Web App
+        if (countProcesses(argv[2]) == 0)
+        {
+            printf("There must be at least one process!\n");
+            return -1;
+        }
+
         tab = fillProcesses(argv[2]);
+
+        // ! Making sure the input is valid, so web app dont crash
+        if (validateProcesses(tab, countProcesses(argv[2])) == -1)
+        {
+            printf("Validate the config file please!\n");
+            return -1;
+        }
 
         if (strcmp(argv[3], "fifo") == 0)
         {
@@ -122,23 +186,19 @@ int main(int argc, char *argv[])
             roundrobin(tab, countProcesses(argv[2]), atoi(argv[4]), 1); //gcc main.c utils/helpers.c src/rr.c -o final
         }
 
-        // SRT coming soon
-
         return 0;
     }
 
-    // we are sure that he passed at least one parameter.
-
-    if (strcmp(argv[1], "--help") == 0) // assuming that he asked for help
+    // ? we are sure that he passed at least one parameter.
+    if (strcmp(argv[1], "--help") == 0) // * assuming that he asked for help
     {
         printHelp();
         return 0;
     }
 
-    if (argc >= 3) // checking that might want to pass an optional parameter
+    if (argc >= 3) // * checking that might want to pass an optional parameter
     {
         // I wrapped it in an if, in case the list goes on
-
         if (strcmp(argv[2], "--gui") != 0)
         {
             printError();
@@ -148,11 +208,23 @@ int main(int argc, char *argv[])
         launchWebServer();
     }
 
+    // ! counting the processes number first in case anything goes wrong, for the CLI
+    if (countProcesses(argv[1]) == 0)
+    {
+        printf("\033[1;31mThere must be at least one process!\n\033[0m");
+        return -1;
+    }
+
+    // ! validating the input first
     tab = fillProcesses(argv[1]);
-    // CLI version is here
 
-    renderDynamicMenu();
+    if (validateProcesses(tab, countProcesses(argv[1])) == -1)
+    {
+        printf("\033[1;31mValidate the config file please!\n\033[0m");
+        return -1;
+    }
 
-    // tab = sortProcesses(tab, countProcesses(argv[1]));
+    renderDynamicMenu(tab, countProcesses(argv[1]), 2);
+
     return 0;
 }

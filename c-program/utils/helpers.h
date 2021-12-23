@@ -17,3 +17,4 @@ void displayForApp(int outputIndex, int *output, int dataIndex, data *dataTab, i
 void launchWebServer();
 void printHelp();
 void printError();
+int readQuantum();

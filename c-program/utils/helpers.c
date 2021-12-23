@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
 #include "process.h"
 
 int countProcesses(char *filename)
 {
     FILE *fp;
-    char ch, previous;
+    char ch;
     int processCount = 0, step = 0;
     fp = fopen(filename, "r");
     while ((ch = fgetc(fp)) != EOF)
@@ -25,56 +26,75 @@ int countProcesses(char *filename)
     return processCount;
 }
 
-// Optimize
 process *fillProcesses(char *filename)
 {
-    int size, step = 0, i = 0;
     process *tab;
+
     FILE *fp;
-    char ch;
+    size_t read, len = 0;
+    char *line = NULL;
+    int tabIndex, step, size;
+
+    tabIndex = step = size = 0;
 
     size = countProcesses(filename);
     tab = (process *)malloc((size + 1) * sizeof(process));
 
     fp = fopen(filename, "r");
+    if (fp == NULL)
+        exit(EXIT_FAILURE);
 
-    while ((ch = fgetc(fp)) != EOF)
+    while ((int)(read = getline(&line, &len, fp)) != -1)
     {
-        if (ch != '\n')
+        char *token = strtok(line, ",");
+        step = 0;
+        while (token != NULL || step < 4)
         {
-            if (isdigit(ch) != 0)
+            if (strcmp(token, "\n") == 0)
             {
-                if (step == 0)
-                {
-                    tab[i].id = ch - '0';
-                }
-                else if (step == 1)
-                {
-                    tab[i].at = ch - '0';
-                    tab[i].le = ch - '0';
-                }
-                else if (step == 2)
-                {
-                    tab[i].ct = ch - '0';
-                    tab[i].ctc = ch - '0';
-                }
-                else if (step == 3)
-                {
-                    tab[i].priority = ch - '0';
-                }
+                break;
+            }
+
+            if (step == 0)
+            {
+                tab[tabIndex].id = atoi(token);
                 step++;
+                token = strtok(NULL, " ");
             }
-        }
-        else
-        {
-            if (step == 4)
+
+            if (step == 1)
             {
-                i++;
+                tab[tabIndex].at = atoi(token);
+                tab[tabIndex].le = atoi(token);
+                step++;
+                token = strtok(NULL, " ");
             }
-            step = 0;
+
+            if (step == 2)
+            {
+                tab[tabIndex].ct = atoi(token);
+                tab[tabIndex].ctc = atoi(token);
+                step++;
+                token = strtok(NULL, " ");
+            }
+
+            if (step == 3)
+            {
+                tab[tabIndex].priority = atoi(token);
+                step++;
+                token = strtok(NULL, " ");
+            }
+
+            if (step >= 4)
+            {
+                break;
+            }
         }
+        tabIndex++;
     }
+
     fclose(fp);
+
     return tab;
 }
 
@@ -285,7 +305,7 @@ void displayForCLI(int outputIndex, int *output, int dataIndex, data *dataTab, i
     displaystats(dataIndex, dataTab);
     displayGanttDiagram(outputIndex, output, ganttTimeIndex, ganttTime);
 
-    printf("\n\033[0;35mYou can always use the dedicated GUI by running 'scheduler gui'\n\033[0m");
+    printf("\n\033[0;35mYou can always use the dedicated GUI by running 'scheduler <filename> --gui'\n\033[0m");
 }
 
 void displayForApp(int outputIndex, int *output, int dataIndex, data *dataTab, int ganttTimeIndex, int *ganttTime)
@@ -311,7 +331,8 @@ void displayForApp(int outputIndex, int *output, int dataIndex, data *dataTab, i
 
 void launchWebServer()
 {
-    system("php ~/Desktop/Code/scheduler/web-interface/artisan serve");
+    system("/usr/bin/php ~/Desktop/Code/scheduler/web-interface/artisan serve");
+    exit(0);
 }
 
 void printHelp()
@@ -323,8 +344,8 @@ void printHelp()
     printf("\tPrints help informations.\n\n");
 
     printf("\033[0;32mFILE:\n\033[0m");
-    printf("\tA file that must respect the pattern Px, Y, Z, W where\n");
-    printf("\tx refers to the process index\n");
+    printf("\tA file that must respect the pattern X, Y, Z, W where\n");
+    printf("\tX refers to the process index\n");
     printf("\tY refers to the arrival time\n");
     printf("\tZ refres to burst time\n");
     printf("\tW refres to the priority (lower is higher).\n\n");
@@ -336,4 +357,18 @@ void printHelp()
 void printError()
 {
     printf("\033[1;31mInvalid arguments, use --help for usage!\n\033[0m");
+}
+
+int readQuantum()
+{
+    int quantum;
+
+    printf("\033[0;32mA Quantum value is needed to execute the algorithm: \n\033[0m\n");
+    do
+    {
+        printf("Quantum => ");
+        scanf("%d", &quantum);
+    } while (quantum < 1);
+
+    return quantum;
 }
